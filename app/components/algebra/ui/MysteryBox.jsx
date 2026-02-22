@@ -82,11 +82,38 @@ export function MysteryBox({
                 />
               ))}
 
-          {open ? (
-            <span className={`font-extrabold text-amber-800 z-[2] ${small ? "text-xl" : "text-[28px]"}`}>
-              {value}
-            </span>
-          ) : (
+          {open ? (() => {
+            const whole = Math.floor(value);
+            const frac = +(value - whole).toFixed(4);
+            const pillCount = whole + (frac > 0 ? 1 : 0);
+            const inner = sz - 14;
+            let pillSz = small ? 18 : 24;
+            if (pillCount > 0) {
+              const avail = inner * inner * 0.65;
+              const ideal = Math.sqrt(avail / pillCount);
+              pillSz = Math.max(6, Math.min(small ? 18 : 24, Math.floor(ideal - 2)));
+            }
+            const show = Math.min(whole, 30);
+            return (
+              <>
+                <div className="flex flex-wrap justify-center z-[2]" style={{ gap: pillSz <= 8 ? 1 : 2, maxWidth: inner }}>
+                  {Array(show).fill(0).map((_, i) => {
+                    const bg = "linear-gradient(135deg, #fbbf24, #f59e0b 50%, #d97706)";
+                    return <div key={i} className="rounded-full shrink-0" style={{ width: pillSz, height: pillSz, background: bg }} />;
+                  })}
+                  {frac > 0 && (() => {
+                    const deg = Math.round(frac * 360);
+                    const bg = `conic-gradient(from 0deg, #d97706 0deg, #f59e0b ${deg * 0.5}deg, #fbbf24 ${deg}deg, transparent ${deg}deg 360deg)`;
+                    return <div key="frac" className="rounded-full shrink-0" style={{ width: pillSz, height: pillSz, background: bg }} />;
+                  })()}
+                  {whole > 30 && <span className="text-[9px] text-amber-700">+{whole - 30}</span>}
+                </div>
+                <span className={`font-extrabold text-amber-800 z-[2] leading-none ${small ? "text-[10px]" : "text-xs"}`}>
+                  = {value}
+                </span>
+              </>
+            );
+          })() : (
             <span
               onClick={greyed ? undefined : onClickVar}
               className={`font-bold font-mono select-none z-[2]
