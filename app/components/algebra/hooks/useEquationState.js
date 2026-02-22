@@ -48,21 +48,25 @@ export function useEquationState(level) {
       lP -= removable;
       hC += n - removable;
     } else if (op === "×") {
+      // Simplify: cancel filled holes before scaling
+      hC = hC - fH;
+      fH = 0;
       let newNum = bC * n;
       const g = gcd(newNum, sL);
       bC = newNum / g;
       sL = sL / g;
       lP *= n;
       hC *= n;
-      fH *= n;
     } else if (op === "÷") {
+      // Simplify: cancel filled holes before scaling
+      hC = hC - fH;
+      fH = 0;
       let newDen = sL * n;
       const g = gcd(bC, newDen);
       bC = bC / g;
       sL = newDen / g;
       lP = lP / n;
       hC = hC / n;
-      fH = fH / n;
     }
 
     return { boxCount: bC, sliceLines: sL, loosePills: lP, holeCount: hC, filledHoles: fH };
@@ -88,14 +92,30 @@ export function useEquationState(level) {
   }
 
   function buildEquationString() {
-    let eqLeft = "";
-    if (boxCount > 1 && sliceLines > 1) eqLeft = `${boxCount}${varName}/${sliceLines}`;
-    else if (sliceLines > 1) eqLeft = `${varName}/${sliceLines}`;
-    else if (boxCount > 1) eqLeft = `${boxCount}${varName}`;
-    else eqLeft = varName;
-    if (loosePills > 0) eqLeft += ` + ${fmt(loosePills)}`;
-    if (unfilled > 0) eqLeft += ` − ${fmt(unfilled)}`;
-    return `${eqLeft} = ${fmt(rPills)}`;
+    let varSide = "";
+    if (boxCount > 1 && sliceLines > 1) varSide = `${boxCount}${varName}/${sliceLines}`;
+    else if (sliceLines > 1) varSide = `${varName}/${sliceLines}`;
+    else if (boxCount > 1) varSide = `${boxCount}${varName}`;
+    else varSide = varName;
+    if (loosePills > 0) varSide += ` + ${fmt(loosePills)}`;
+    if (unfilled > 0) varSide += ` − ${fmt(unfilled)}`;
+    const numSide = fmt(rPills);
+    return level.flipped ? `${numSide} = ${varSide}` : `${varSide} = ${numSide}`;
+  }
+
+  // Build equation string from the level definition (not from mutable state)
+  function buildInitialEquationString() {
+    const initSlice = isMulType ? level.divisor : 1;
+    const v = varName;
+    let varSide = "";
+    if (level.initBoxes > 1 && initSlice > 1) varSide = `${level.initBoxes}${v}/${initSlice}`;
+    else if (initSlice > 1) varSide = `${v}/${initSlice}`;
+    else if (level.initBoxes > 1) varSide = `${level.initBoxes}${v}`;
+    else varSide = v;
+    if (level.initPills > 0) varSide += ` + ${fmt(level.initPills)}`;
+    if (level.initSlots > 0) varSide += ` − ${fmt(level.initSlots)}`;
+    const numSide = fmt(level.rightPills);
+    return level.flipped ? `${numSide} = ${varSide}` : `${varSide} = ${numSide}`;
   }
 
   function markSolved() {
@@ -130,7 +150,7 @@ export function useEquationState(level) {
     steps, setSteps,
     unfilled,
     computeLeftOp, applyLeftState,
-    isSolved, buildEquationString,
+    isSolved, buildEquationString, buildInitialEquationString,
     markSolved, resetToLevel,
   };
 }

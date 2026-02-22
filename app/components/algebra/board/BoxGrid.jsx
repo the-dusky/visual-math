@@ -3,7 +3,7 @@
 import { MysteryBox } from "../ui/MysteryBox";
 
 export function BoxGrid({
-  count, boxOpen, boxValue, holeCount = 0, filledHoles = 0,
+  count, boxOpen, boxValue,
   sliceLines = 1, varName, greyedFrom, activeSlice,
   onClickVar, showPicker, onPickVar, onClosePicker,
 }) {
@@ -19,17 +19,11 @@ export function BoxGrid({
             open={boxOpen}
             value={boxValue}
             small={small}
-            holeCount={i === 0 ? holeCount : 0}
-            filledHoles={i === 0 ? filledHoles : 0}
             sliceLines={sliceLines}
             variable={varName}
             greyed={greyedFrom != null && i >= greyedFrom}
             activeSlice={activeSlice && !(greyedFrom != null && i >= greyedFrom)}
-            onClickVar={
-              i === 0
-                ? (e) => { e.stopPropagation(); onClickVar?.(); }
-                : undefined
-            }
+            onClickVar={i === 0 ? onClickVar : undefined}
             showPicker={showPicker && i === 0}
             onPickVar={onPickVar}
             onClosePicker={onClosePicker}

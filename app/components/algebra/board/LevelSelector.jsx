@@ -16,8 +16,8 @@ export function LevelSelector({
       {/* Mode toggle */}
       <div className="inline-flex rounded-lg overflow-hidden border border-border mb-4">
         {[
-          ["explore", "Explore"],
-          ["solve", "Solve"],
+          ["explore", "Box Mode"],
+          ["solve", "Test Mode"],
         ].map(([m, label]) => (
           <button
             key={m}

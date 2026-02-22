@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useEquationState } from "./useEquationState";
 
 export function useExploreLogic(level) {
@@ -11,23 +11,16 @@ export function useExploreLogic(level) {
     computeLeftOp, applyLeftState, isSolved, markSolved, resetToLevel,
   } = eq;
 
+  const initialEq = eq.buildInitialEquationString();
+
   const [phase, setPhase] = useState("left"); // left | right | unbalanced | solved
   const [leftOp, setLeftOp] = useState(null);
   const [leftNum, setLeftNum] = useState(null);
-  const [rightError, setRightError] = useState("");
   const [leftError, setLeftError] = useState("");
+  const [rightError, setRightError] = useState("");
   const [snap, setSnap] = useState(null);
   const [opKey, setOpKey] = useState(0);
-
-  // Auto-celebrate when variable is isolated AND equation is balanced
-  // Only trigger in "left" phase (both sides have been updated equally)
-  useEffect(() => {
-    if (phase === "left" && isSolved()) {
-      setPhase("solved");
-      setSteps((s) => [...s, `${varName} = ${rPills}`]);
-      markSolved();
-    }
-  }, [boxCount, sliceLines, loosePills, unfilled, phase]);
+  const [workLines, setWorkLines] = useState([]);
 
   function applyToLeft(op, n) {
     setSnap({ boxCount, sliceLines, loosePills, holeCount, filledHoles, rPills });
@@ -42,14 +35,33 @@ export function useExploreLogic(level) {
     applyLeftState(result);
     setLeftOp(op);
     setLeftNum(n);
+
+    // Build intermediate equation (left side changed, right side not yet)
+    const fmt = (v) => Number.isInteger(v) ? String(v) : parseFloat(v.toFixed(4)).toString();
+    const bC = result.boxCount, sL = result.sliceLines;
+    const lP = result.loosePills, uf = result.holeCount - result.filledHoles;
+    let vs = "";
+    if (bC > 1 && sL > 1) vs = `${bC}${varName}/${sL}`;
+    else if (sL > 1) vs = `${varName}/${sL}`;
+    else if (bC > 1) vs = `${bC}${varName}`;
+    else vs = varName;
+    if (lP > 0) vs += ` + ${fmt(lP)}`;
+    if (uf > 0) vs += ` − ${fmt(uf)}`;
+    const ns = fmt(rPills);
+    const pendingEq = level.flipped ? `${ns} = ${vs}` : `${vs} = ${ns}`;
+
+    setWorkLines((w) => [
+      ...w,
+      { type: "op", op, n, pending: true },
+      { type: "eq", text: pendingEq, pending: true },
+    ]);
     setPhase("right");
   }
 
   function applyToRight(op, n) {
     setRightError("");
 
-    if (op === "−" && n > rPills) { setRightError("Not enough pills!"); return; }
-    if (op === "×" && rPills * n > 200) { setRightError("Too many pills!"); return; }
+    if (op === "×" && Math.abs(rPills * n) > 99999) { setRightError("Too many pills!"); return; }
 
     if (op === leftOp && n === leftNum) {
       // Balanced
@@ -60,7 +72,6 @@ export function useExploreLogic(level) {
       else if (op === "÷") newR /= n;
       setRPills(newR);
 
-      // Check if solved after this move (compute manually since state is async)
       const newLeft = computeLeftOp(leftOp, leftNum, {
         boxCount: snap.boxCount, sliceLines: snap.sliceLines,
         loosePills: snap.loosePills, holeCount: snap.holeCount, filledHoles: snap.filledHoles,
@@ -68,10 +79,32 @@ export function useExploreLogic(level) {
 
       if (!newLeft.error && isSolved(newLeft)) {
         setPhase("solved");
-        setSteps((s) => [...s, `${op}${n} both sides`, `${varName} = ${newR}`]);
+        const solvedText = level.flipped ? `${newR} = ${varName}` : `${varName} = ${newR}`;
+        setWorkLines((w) => [
+          ...w.slice(0, -2),
+          { type: "op", op, n },
+          { type: "eq", text: solvedText, solved: true },
+        ]);
         markSolved();
       } else {
-        setSteps((s) => [...s, `${op}${n} both sides`]);
+        // Build resulting equation string
+        const fmt = (v) => Number.isInteger(v) ? String(v) : parseFloat(v.toFixed(4)).toString();
+        const bC = newLeft.boxCount, sL = newLeft.sliceLines;
+        const lP = newLeft.loosePills, uf = newLeft.holeCount - newLeft.filledHoles;
+        let varSide = "";
+        if (bC > 1 && sL > 1) varSide = `${bC}${varName}/${sL}`;
+        else if (sL > 1) varSide = `${varName}/${sL}`;
+        else if (bC > 1) varSide = `${bC}${varName}`;
+        else varSide = varName;
+        if (lP > 0) varSide += ` + ${fmt(lP)}`;
+        if (uf > 0) varSide += ` − ${fmt(uf)}`;
+
+        const eqText = level.flipped ? `${fmt(newR)} = ${varSide}` : `${varSide} = ${fmt(newR)}`;
+        setWorkLines((w) => [
+          ...w.slice(0, -2),
+          { type: "op", op, n },
+          { type: "eq", text: eqText },
+        ]);
         setLeftOp(null);
         setLeftNum(null);
         setPhase("left");
@@ -96,6 +129,11 @@ export function useExploreLogic(level) {
       eq.setFilledHoles(snap.filledHoles);
       setRPills(snap.rPills);
     }
+    setWorkLines((w) => {
+      if (w.length >= 2 && w[w.length - 1].pending && w[w.length - 2].pending) return w.slice(0, -2);
+      if (w.length > 0 && w[w.length - 1].pending) return w.slice(0, -1);
+      return w;
+    });
     setLeftOp(null);
     setLeftNum(null);
     setRightError("");
@@ -112,6 +150,7 @@ export function useExploreLogic(level) {
     setLeftNum(null);
     setRightError("");
     setLeftError("");
+    setWorkLines([]);
     setOpKey((k) => k + 1);
   }
 
@@ -119,8 +158,9 @@ export function useExploreLogic(level) {
 
   return {
     ...eq,
-    phase, leftOp, leftNum, rightError, leftError,
-    snap, opKey, liveEq,
+    phase, leftOp, leftNum, leftError, rightError,
+    snap, opKey, liveEq, workLines,
+    initialEq,
     applyToLeft, applyToRight, undo, fullReset,
   };
 }

@@ -2,9 +2,7 @@
 
 import { useState } from "react";
 import { parseEquation } from "./algebra/parser";
-import { levelEq } from "./algebra/parser";
 import { PRESET_LEVELS } from "./algebra/constants";
-import { EquationDisplay } from "./algebra/ui/Frac";
 import { LevelSelector } from "./algebra/board/LevelSelector";
 import { ExploreMode } from "./algebra/modes/ExploreMode";
 import { SolveMode } from "./algebra/modes/SolveMode";
@@ -51,11 +49,6 @@ export default function BoxAlgebra() {
         mode={mode}
         onModeChange={(m) => { setMode(m); setGameKey((k) => k + 1); }}
       />
-
-      {/* Title equation */}
-      <div className="text-center mb-4">
-        <EquationDisplay text={levelEq(lev)} size={24} />
-      </div>
 
       {mode === "explore" ? (
         <ExploreMode

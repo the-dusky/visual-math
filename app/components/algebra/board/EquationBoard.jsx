@@ -5,7 +5,7 @@ export function EquationBoard({ leftContent, rightContent, hasError, isSolved, e
     <div className="flex flex-col sm:flex-row items-stretch gap-3 sm:gap-3 mb-4">
       {/* Left side */}
       <div
-        className={`flex-1 rounded-xl p-4 border flex flex-col items-center gap-3 transition-all duration-300
+        className={`flex-1 rounded-xl p-4 border flex flex-col items-center gap-3 overflow-visible transition-all duration-300
           ${hasError
             ? "bg-err-bg border-err-dim"
             : isSolved
@@ -27,7 +27,7 @@ export function EquationBoard({ leftContent, rightContent, hasError, isSolved, e
 
       {/* Right side */}
       <div
-        className={`flex-1 rounded-xl p-4 border flex flex-col items-center gap-3 transition-all duration-300
+        className={`flex-1 rounded-xl p-4 border flex flex-col items-center gap-3 overflow-visible transition-all duration-300
           ${hasError
             ? "bg-err-bg border-err-dim"
             : isSolved

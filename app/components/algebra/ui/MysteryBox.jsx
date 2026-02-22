@@ -1,7 +1,5 @@
 "use client";
 
-import { HoleDot } from "./HoleDot";
-
 function VarPicker({ current, onPick, onClose }) {
   return (
     <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 z-50 bg-surface-raised border border-border rounded-xl p-2 flex flex-wrap gap-1 max-w-[200px] justify-center">
@@ -23,132 +21,159 @@ function VarPicker({ current, onPick, onClose }) {
 }
 
 export function MysteryBox({
-  open, value, small, holeCount: holes = 0, filledHoles = 0,
+  open, value, small,
   sliceLines: lines = 1, variable, onClickVar, showPicker,
   onPickVar, onClosePicker, greyed, activeSlice,
 }) {
   const sz = small ? 56 : 86;
   const v = variable || "x";
-  const filled = Math.min(filledHoles, holes);
   const showSliceGreying = activeSlice && lines > 1 && !open;
   const showLines = lines > 1 && !open && !greyed;
   const bleed = 10;
+  const lidH = sz;
+  const r = small ? 6 : 8;
 
-  // Scale hole size to fit inside the box
-  const boxInner = sz - 16;
-  let holeSize = 16;
-  if (holes > 0) {
-    const availArea = boxInner * boxInner * 0.55;
-    const idealWithGap = Math.sqrt(availArea / Math.ceil(holes));
-    holeSize = Math.max(3, Math.min(16, Math.floor(idealWithGap - 2)));
-  }
+  const boxBg = greyed ? "#27272a" : "#92400e";
+  const borderColor = greyed ? "#3f3f46" : "#f59e0b";
+  const springH = Math.round(sz * 0.18);
+
+  // Badge grows with digit length
+  const valStr = String(value ?? "");
+  const len = valStr.length;
+  const baseBadge = small ? sz * 0.55 : sz * 0.65;
+  const numBadge = len <= 2 ? baseBadge : baseBadge + (len - 2) * (small ? 8 : 12);
+  const badgeFont = len <= 2
+    ? (small ? 20 : 28)
+    : Math.max(small ? 12 : 14, (small ? 20 : 28) - (len - 2) * (small ? 3 : 4));
 
   return (
     <div className="flex flex-col items-center relative">
-      <div className="relative" style={{ width: sz + bleed * 2, height: sz }}>
-        {/* The box */}
+      <div className="relative overflow-visible" style={{ width: sz + bleed * 2, height: sz }}>
+
+        {/* Jack-in-the-box: number on a spring */}
         <div
-          className="absolute flex flex-col items-center justify-center gap-0.5 rounded-lg overflow-hidden transition-all duration-500"
+          className="absolute left-1/2 z-5 flex flex-col items-center pointer-events-none"
           style={{
-            left: bleed, top: 0, width: sz, height: sz,
-            background: greyed
-              ? "#27272a"
-              : open
-                ? "#fef3c7"
-                : "#92400e",
-            border: greyed
-              ? "1px solid #3f3f46"
-              : open
-                ? "1px solid #d97706"
-                : "1px solid #f59e0b",
-            transform: open ? "scale(1.05)" : "scale(1)",
-            opacity: greyed ? 0.35 : 1,
-            transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+            bottom: sz / 2,
+            transform: open
+              ? `translateX(-50%) translateY(0px)`
+              : `translateX(-50%) translateY(${springH + numBadge}px)`,
+            opacity: open ? 1 : 0,
+            transition: open
+              ? "transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s, opacity 0.2s ease 0.15s"
+              : "transform 0.3s ease, opacity 0.15s ease",
           }}
         >
-          {/* Greyed section overlays for slice visualization */}
-          {showSliceGreying &&
-            Array(lines)
-              .fill(0)
-              .map((_, i) => (
-                <div
-                  key={`s${i}`}
-                  className="absolute left-0 right-0 pointer-events-none z-[1] transition-[background] duration-400"
-                  style={{
-                    top: `${(i * 100) / lines}%`,
-                    height: `${100 / lines}%`,
-                    background: i === 0 ? "transparent" : "rgba(0,0,0,0.55)",
-                  }}
-                />
-              ))}
+          {/* Number badge */}
+          <div
+            className="rounded-full flex items-center justify-center font-extrabold shadow-lg"
+            style={{
+              width: numBadge,
+              height: numBadge,
+              fontSize: badgeFont,
+              background: "linear-gradient(135deg, #fef3c7, #fde68a)",
+              border: "2px solid #d97706",
+              color: "#92400e",
+            }}
+          >
+            {value}
+          </div>
+          {/* Spring coil — foreshortened */}
+          <svg
+            width={small ? 14 : 18}
+            height={springH}
+            viewBox="0 0 20 44"
+            preserveAspectRatio="none"
+            className="block"
+            style={{ transform: "perspective(200px) rotateX(25deg)" }}
+          >
+            <path
+              d="M10 0 Q24 5.5 10 11 Q-4 16.5 10 22 Q24 27.5 10 33 Q-4 38.5 10 44"
+              stroke="#d97706"
+              fill="none"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
 
-          {open ? (() => {
-            const whole = Math.floor(value);
-            const frac = +(value - whole).toFixed(4);
-            const pillCount = whole + (frac > 0 ? 1 : 0);
-            const inner = sz - 14;
-            let pillSz = small ? 18 : 24;
-            if (pillCount > 0) {
-              const avail = inner * inner * 0.65;
-              const ideal = Math.sqrt(avail / pillCount);
-              pillSz = Math.max(6, Math.min(small ? 18 : 24, Math.floor(ideal - 2)));
-            }
-            const show = Math.min(whole, 30);
-            return (
-              <>
-                <div className="flex flex-wrap justify-center z-[2]" style={{ gap: pillSz <= 8 ? 1 : 2, maxWidth: inner }}>
-                  {Array(show).fill(0).map((_, i) => {
-                    const bg = "linear-gradient(135deg, #fbbf24, #f59e0b 50%, #d97706)";
-                    return <div key={i} className="rounded-full shrink-0" style={{ width: pillSz, height: pillSz, background: bg }} />;
-                  })}
-                  {frac > 0 && (() => {
-                    const deg = Math.round(frac * 360);
-                    const bg = `conic-gradient(from 0deg, #d97706 0deg, #f59e0b ${deg * 0.5}deg, #fbbf24 ${deg}deg, transparent ${deg}deg 360deg)`;
-                    return <div key="frac" className="rounded-full shrink-0" style={{ width: pillSz, height: pillSz, background: bg }} />;
-                  })()}
-                  {whole > 30 && <span className="text-[9px] text-amber-700">+{whole - 30}</span>}
-                </div>
-                <span className={`font-extrabold text-amber-800 z-[2] leading-none ${small ? "text-[10px]" : "text-xs"}`}>
-                  = {value}
-                </span>
-              </>
-            );
-          })() : (
+        {/* Box body (interior, visible when doors open) */}
+        <div
+          className="absolute rounded-lg"
+          style={{
+            left: bleed, top: 0, width: sz, height: sz,
+            background: open ? "#78350f" : boxBg,
+            border: `1px solid ${borderColor}`,
+            opacity: greyed ? 0.35 : 1,
+            transition: "background 0.4s ease",
+          }}
+        />
+
+        {/* Lid — splits into two halves that swing open outward */}
+        {[
+          { side: "left", originX: "left", angle: open ? 145 : 0, rLeft: bleed, br: `${r}px 0 0 ${r}px`,
+            borderW: `1px 0 1px 1px` },
+          { side: "right", originX: "right", angle: open ? -145 : 0, rLeft: bleed + sz / 2, br: `0 ${r}px ${r}px 0`,
+            borderW: `1px 1px 1px 0` },
+        ].map(({ side, originX, angle, rLeft, br, borderW }) => (
+          <div
+            key={side}
+            className="absolute z-4"
+            style={{
+              left: rLeft, top: 0, width: sz / 2, height: lidH,
+              transformOrigin: `${originX} center`,
+              transform: `perspective(600px) rotateY(${angle}deg)`,
+              transition: "transform 0.55s cubic-bezier(0.8, 0, 0.2, 1)",
+              background: boxBg,
+              borderRadius: br,
+              borderStyle: "solid",
+              borderColor,
+              borderWidth: borderW,
+              opacity: greyed ? 0.35 : 1,
+            }}
+          />
+        ))}
+
+        {/* Slice greying overlays — on top of doors */}
+        {showSliceGreying &&
+          Array(lines)
+            .fill(0)
+            .map((_, i) => (
+              <div
+                key={`s${i}`}
+                className="absolute pointer-events-none z-5 transition-[background] duration-400"
+                style={{
+                  left: bleed,
+                  top: (i * sz) / lines,
+                  width: sz,
+                  height: sz / lines,
+                  background: i === 0 ? "transparent" : "rgba(0,0,0,0.55)",
+                }}
+              />
+            ))}
+
+        {/* Clickable box face + variable text */}
+        {!open && (
+          <div
+            onClick={greyed ? undefined : (e) => { e.stopPropagation(); onClickVar?.(); }}
+            className={`absolute z-6 flex items-center justify-center
+              ${greyed ? "pointer-events-none" : "cursor-pointer"}
+            `}
+            style={{
+              left: bleed, top: 0, width: sz, height: sz,
+              opacity: greyed ? 0.35 : 1,
+            }}
+          >
             <span
-              onClick={greyed ? undefined : onClickVar}
-              className={`font-bold font-mono select-none z-[2]
-                ${small ? "text-[22px]" : "text-[34px]"}
-                ${greyed ? "text-text-faint" : "text-accent-bright cursor-pointer"}
+              className={`font-extrabold font-mono select-none
+                ${small ? "text-[26px]" : "text-[40px]"}
+                ${greyed ? "text-text-faint" : "text-accent-bright"}
               `}
             >
               {v}
             </span>
-          )}
-
-          {holes > 0 && !open && !greyed && (() => {
-            const wholeHoles = Math.floor(holes);
-            const fracHole = +(holes - wholeHoles).toFixed(4);
-            const wholeFilled = Math.floor(filled);
-            const fracFilled = +(filled - wholeFilled).toFixed(4);
-            const totalDots = wholeHoles + (fracHole > 0 ? 1 : 0);
-
-            return (
-              <div
-                className="flex flex-wrap justify-center z-[2]"
-                style={{ gap: holeSize <= 5 ? 1 : 2, maxWidth: sz - 14 }}
-              >
-                {Array(totalDots)
-                  .fill(0)
-                  .map((_, i) => {
-                    const isFrac = i === wholeHoles && fracHole > 0;
-                    const frac = isFrac ? fracHole : 1;
-                    const isFilled = i < wholeFilled || (i === wholeFilled && fracFilled > 0);
-                    return <HoleDot key={`h${i}`} filled={isFilled} fraction={frac} size={holeSize} />;
-                  })}
-              </div>
-            );
-          })()}
-        </div>
+          </div>
+        )}
 
         {/* Slice lines that bleed past the box edges */}
         {showLines &&
@@ -157,7 +182,7 @@ export function MysteryBox({
             .map((_, i) => (
               <div
                 key={`cut${i}`}
-                className="absolute left-0 right-0 h-0 pointer-events-none z-[3]"
+                className="absolute left-0 right-0 h-0 pointer-events-none z-5"
                 style={{
                   top: ((i + 1) / lines) * sz,
                   borderTop: "1px dashed rgba(251,191,36,0.5)",

@@ -2,6 +2,11 @@ export function gcd(a, b) {
   return b === 0 ? a : gcd(b, a % b);
 }
 
+// Matches an integer or decimal number like 10, 0.25, .5
+const NUM = String.raw`\d+\.?\d*|\.\d+`;
+// Matches a possibly-negative number
+const SNUM = String.raw`-?(?:${NUM})`;
+
 export function parseEquation(input) {
   const s = input
     .replace(/\s+/g, "")
@@ -9,14 +14,23 @@ export function parseEquation(input) {
     .replace(/×/g, "*")
     .replace(/÷/g, "/");
 
-  // x/d = c  →  multiply type
-  const divMatch = s.match(/^([a-zA-Z])\/(\d+)=(\d+)$/);
+  // Check for flipped format: c = expr (c can be negative)
+  let flipped = false;
+  let normalized = s;
+  const flipMatch = s.match(new RegExp(`^(${SNUM})=(.+)$`));
+  if (flipMatch && /[a-zA-Z]/.test(flipMatch[2])) {
+    flipped = true;
+    normalized = flipMatch[2] + "=" + flipMatch[1];
+  }
+
+  // x/d = c  →  multiply type (c can be negative for negative box values)
+  const divMatch = normalized.match(new RegExp(`^([a-zA-Z])/(${NUM})=(${SNUM})$`));
   if (divMatch) {
     const v = divMatch[1];
-    const d = parseInt(divMatch[2]);
-    const c = parseInt(divMatch[3]);
+    const d = parseFloat(divMatch[2]);
+    const c = parseFloat(divMatch[3]);
     const xVal = d * c;
-    if (d <= 0 || c <= 0 || xVal > 50) return null;
+    if (d <= 0 || Math.abs(xVal) > 99999) return null;
     return {
       type: "multiply",
       boxValue: xVal,
@@ -26,47 +40,52 @@ export function parseEquation(input) {
       rightPills: c,
       divisor: d,
       variable: v,
+      flipped,
     };
   }
 
-  // ax ± b = c
-  const match = s.match(/^(\d*)([a-zA-Z])([+-]\d+)?=(\d+)$/);
+  // ax ± b = c  (a, b, c can be decimals; c can be negative)
+  const match = normalized.match(new RegExp(`^(${NUM})?([a-zA-Z])([+-](?:${NUM}))?=(${SNUM})$`));
   if (!match) return null;
 
-  const a = match[1] ? parseInt(match[1]) : 1;
+  const a = match[1] ? parseFloat(match[1]) : 1;
   const v = match[2];
-  const bRaw = match[3] ? parseInt(match[3]) : 0;
-  const c = parseInt(match[4]);
+  const bRaw = match[3] ? parseFloat(match[3]) : 0;
+  const c = parseFloat(match[4]);
 
-  if (isNaN(a) || isNaN(c) || a <= 0 || c < 0) return null;
+  if (isNaN(a) || isNaN(c) || a <= 0) return null;
 
   const xVal = (c - bRaw) / a;
-  if (xVal <= 0 || !Number.isInteger(xVal) || xVal > 50 || c > 50) return null;
+  if (xVal <= 0 || xVal > 99999 || Math.abs(c) > 99999) return null;
 
   const b = Math.abs(bRaw);
 
   if (a === 1 && bRaw > 0)
-    return { type: "addition", boxValue: xVal, initBoxes: 1, initPills: b, initSlots: 0, rightPills: c, variable: v };
+    return { type: "addition", boxValue: xVal, initBoxes: 1, initPills: b, initSlots: 0, rightPills: c, variable: v, flipped };
   if (a === 1 && bRaw < 0)
-    return { type: "subtraction", boxValue: xVal, initBoxes: 1, initPills: 0, initSlots: b, rightPills: c, variable: v };
+    return { type: "subtraction", boxValue: xVal, initBoxes: 1, initPills: 0, initSlots: b, rightPills: c, variable: v, flipped };
   if (a === 1) return null;
+  if (!Number.isInteger(a) || a > 20) return null; // box count must be a reasonable integer
   if (a > 1 && bRaw === 0)
-    return { type: "division", boxValue: xVal, initBoxes: a, initPills: 0, initSlots: 0, rightPills: c, variable: v };
+    return { type: "division", boxValue: xVal, initBoxes: a, initPills: 0, initSlots: 0, rightPills: c, variable: v, flipped };
   if (a > 1 && bRaw > 0)
-    return { type: "twostep", boxValue: xVal, initBoxes: a, initPills: b, initSlots: 0, rightPills: c, variable: v };
+    return { type: "twostep", boxValue: xVal, initBoxes: a, initPills: b, initSlots: 0, rightPills: c, variable: v, flipped };
   if (a > 1 && bRaw < 0)
-    return { type: "twostep_sub", boxValue: xVal, initBoxes: a, initPills: 0, initSlots: b, rightPills: c, variable: v };
+    return { type: "twostep_sub", boxValue: xVal, initBoxes: a, initPills: 0, initSlots: b, rightPills: c, variable: v, flipped };
 
   return null;
 }
 
 export function levelEq(l) {
   const v = l.variable || "x";
-  if (l.type === "addition") return `${v} + ${l.initPills} = ${l.rightPills}`;
-  if (l.type === "subtraction") return `${v} − ${l.initSlots} = ${l.rightPills}`;
-  if (l.type === "division") return `${l.initBoxes}${v} = ${l.rightPills}`;
-  if (l.type === "multiply") return `${v}/${l.divisor} = ${l.rightPills}`;
-  if (l.type === "twostep") return `${l.initBoxes}${v} + ${l.initPills} = ${l.rightPills}`;
-  if (l.type === "twostep_sub") return `${l.initBoxes}${v} − ${l.initSlots} = ${l.rightPills}`;
-  return "";
+  const fmt = (n) => Number.isInteger(n) ? String(n) : parseFloat(n.toFixed(4)).toString();
+  let varSide, numSide;
+  if (l.type === "addition") { varSide = `${v} + ${fmt(l.initPills)}`; numSide = `${fmt(l.rightPills)}`; }
+  else if (l.type === "subtraction") { varSide = `${v} − ${fmt(l.initSlots)}`; numSide = `${fmt(l.rightPills)}`; }
+  else if (l.type === "division") { varSide = `${fmt(l.initBoxes)}${v}`; numSide = `${fmt(l.rightPills)}`; }
+  else if (l.type === "multiply") { varSide = `${v}/${fmt(l.divisor)}`; numSide = `${fmt(l.rightPills)}`; }
+  else if (l.type === "twostep") { varSide = `${fmt(l.initBoxes)}${v} + ${fmt(l.initPills)}`; numSide = `${fmt(l.rightPills)}`; }
+  else if (l.type === "twostep_sub") { varSide = `${fmt(l.initBoxes)}${v} − ${fmt(l.initSlots)}`; numSide = `${fmt(l.rightPills)}`; }
+  else return "";
+  return l.flipped ? `${numSide} = ${varSide}` : `${varSide} = ${numSide}`;
 }
