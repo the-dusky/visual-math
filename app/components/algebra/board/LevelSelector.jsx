@@ -9,7 +9,7 @@ export function LevelSelector({
   return (
     <div className="text-center mb-5">
       <h1 className="text-xl sm:text-2xl font-extrabold mb-1 text-accent">
-        Box Algebra
+        Mekhi's Box Algebra Game
       </h1>
       <p className="text-xs text-text-muted mb-4">What&apos;s hiding in the box?</p>
 
