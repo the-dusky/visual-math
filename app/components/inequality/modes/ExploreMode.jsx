@@ -131,6 +131,7 @@ export function ExploreMode({ level, onNext, hasNext }) {
         mode="inequality"
         ineqDir={s.ineqDir}
         orbRef={orbRef}
+        negCoeff={s.negCoeff}
       />
       <PillGroup count={s.loosePills} holes={s.unfilled} />
       {!isSolved && (

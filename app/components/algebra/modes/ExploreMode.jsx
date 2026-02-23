@@ -54,6 +54,7 @@ export function ExploreMode({ level, onNext, hasNext }) {
         showPicker={s.showPicker}
         onPickVar={s.setVarName}
         onClosePicker={s.closePicker}
+        negCoeff={s.negCoeff}
       />
       <PillGroup count={s.loosePills} holes={s.unfilled} />
       {!isSolved && (
