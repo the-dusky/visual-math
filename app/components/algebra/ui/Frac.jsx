@@ -15,7 +15,7 @@ export function Frac({ top, bottom, size = 20 }) {
 }
 
 export function EquationDisplay({ text, size = 22, equalsOverride, colorClass }) {
-  const parts = text.split(/(\s+|(?<==)|(?==))/g).filter(Boolean);
+  const parts = text.split(/(\s+|(?<=[=><≥≤])|(?=[=><≥≤]))/g).filter(Boolean);
 
   return (
     <span
@@ -23,7 +23,7 @@ export function EquationDisplay({ text, size = 22, equalsOverride, colorClass })
       style={{ fontSize: size }}
     >
       {parts.map((part, i) => {
-        if (part === "=" && equalsOverride) {
+        if (/^[=><≥≤]$/.test(part) && equalsOverride) {
           return <span key={i}>{equalsOverride}</span>;
         }
         const fracMatch = part.match(/^(\d*[a-zA-Z]?)\/(\d+)$/);

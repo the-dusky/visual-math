@@ -33,7 +33,7 @@ export function OpPicker({ active, locked, lockedOp, lockedNum, onSubmit, label 
 
   function go() {
     const n = parseFloat(num);
-    if (!op || isNaN(n) || n <= 0) return;
+    if (!op || isNaN(n) || n === 0) return;
     onSubmit(op, n);
   }
 
@@ -57,11 +57,13 @@ export function OpPicker({ active, locked, lockedOp, lockedNum, onSubmit, label 
         <input
           ref={inputRef}
           type="number"
+          inputMode="numeric"
           value={num}
           onChange={(e) => setNum(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") go(); }}
+          onWheel={(e) => e.target.blur()}
           placeholder="?"
-          className="w-11 h-9 sm:h-10 rounded-lg border border-border bg-surface text-accent text-[15px] font-extrabold text-center font-mono outline-none focus:border-border-strong"
+          className="w-11 h-9 sm:h-10 rounded-lg border border-border bg-surface text-accent text-[15px] font-extrabold text-center font-mono outline-none focus:border-border-strong [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
         />
         <button
           onClick={go}

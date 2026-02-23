@@ -1,4 +1,5 @@
 export function gcd(a, b) {
+  a = Math.abs(a); b = Math.abs(b);
   return b === 0 ? a : gcd(b, a % b);
 }
 

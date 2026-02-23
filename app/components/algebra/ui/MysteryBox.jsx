@@ -24,6 +24,7 @@ export function MysteryBox({
   open, value, small,
   sliceLines: lines = 1, variable, onClickVar, showPicker,
   onPickVar, onClosePicker, greyed, activeSlice,
+  mode = "equation", ineqDir, orbRef,
 }) {
   const sz = small ? 56 : 86;
   const v = variable || "x";
@@ -50,52 +51,105 @@ export function MysteryBox({
     <div className="flex flex-col items-center relative">
       <div className="relative overflow-visible" style={{ width: sz + bleed * 2, height: sz }}>
 
-        {/* Jack-in-the-box: number on a spring */}
-        <div
-          className="absolute left-1/2 z-5 flex flex-col items-center pointer-events-none"
-          style={{
-            bottom: sz / 2,
-            transform: open
-              ? `translateX(-50%) translateY(0px)`
-              : `translateX(-50%) translateY(${springH + numBadge}px)`,
-            opacity: open ? 1 : 0,
-            transition: open
-              ? "transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s, opacity 0.2s ease 0.15s"
-              : "transform 0.3s ease, opacity 0.15s ease",
-          }}
-        >
-          {/* Number badge */}
+        {/* Jack-in-the-box: number on a spring (equation mode) */}
+        {mode === "equation" && (
           <div
-            className="rounded-full flex items-center justify-center font-extrabold shadow-lg"
+            className="absolute left-1/2 z-10 flex flex-col items-center pointer-events-none"
             style={{
-              width: numBadge,
-              height: numBadge,
-              fontSize: badgeFont,
-              background: "linear-gradient(135deg, #fef3c7, #fde68a)",
-              border: "2px solid #d97706",
-              color: "#92400e",
+              bottom: sz / 2,
+              transform: open
+                ? `translateX(-50%) translateY(0px)`
+                : `translateX(-50%) translateY(${springH + numBadge}px)`,
+              opacity: open ? 1 : 0,
+              transition: open
+                ? "transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s, opacity 0.2s ease 0.15s"
+                : "transform 0.3s ease, opacity 0.15s ease",
             }}
           >
-            {value}
+            {/* Number badge */}
+            <div
+              className="rounded-full flex items-center justify-center font-extrabold shadow-lg"
+              style={{
+                width: numBadge,
+                height: numBadge,
+                fontSize: badgeFont,
+                background: "linear-gradient(135deg, #fef3c7, #fde68a)",
+                border: "2px solid #d97706",
+                color: "#92400e",
+              }}
+            >
+              {value}
+            </div>
+            {/* Spring coil — foreshortened */}
+            <svg
+              width={small ? 14 : 18}
+              height={springH}
+              viewBox="0 0 20 44"
+              preserveAspectRatio="none"
+              className="block"
+              style={{ transform: "perspective(200px) rotateX(25deg)" }}
+            >
+              <path
+                d="M10 0 Q24 5.5 10 11 Q-4 16.5 10 22 Q24 27.5 10 33 Q-4 38.5 10 44"
+                stroke="#d97706"
+                fill="none"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+            </svg>
           </div>
-          {/* Spring coil — foreshortened */}
-          <svg
-            width={small ? 14 : 18}
-            height={springH}
-            viewBox="0 0 20 44"
-            preserveAspectRatio="none"
-            className="block"
-            style={{ transform: "perspective(200px) rotateX(25deg)" }}
+        )}
+
+        {/* Jack-in-the-box: glowing orb on a spring (inequality mode) */}
+        {mode === "inequality" && (
+          <div
+            className="absolute left-1/2 z-10 flex flex-col items-center pointer-events-none"
+            style={{
+              bottom: sz / 2,
+              transform: open
+                ? `translateX(-50%) translateY(0px)`
+                : `translateX(-50%) translateY(${springH + numBadge}px)`,
+              opacity: open ? 1 : 0,
+              transition: open
+                ? "transform 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s, opacity 0.2s ease 0.15s"
+                : "transform 0.3s ease, opacity 0.15s ease",
+            }}
           >
-            <path
-              d="M10 0 Q24 5.5 10 11 Q-4 16.5 10 22 Q24 27.5 10 33 Q-4 38.5 10 44"
-              stroke="#d97706"
-              fill="none"
-              strokeWidth="2.5"
-              strokeLinecap="round"
+            {/* Glowing orb */}
+            <div
+              ref={orbRef}
+              className="rounded-full flex items-center justify-center"
+              style={{
+                width: numBadge * 0.7,
+                height: numBadge * 0.7,
+                background: "radial-gradient(circle, #fef3c7, #fbbf24 40%, #f59e0b)",
+                border: "2px solid #d97706",
+                boxShadow: open
+                  ? "0 0 24px 12px rgba(251,191,36,0.5), 0 0 60px 20px rgba(251,191,36,0.25)"
+                  : "none",
+                transition: "box-shadow 0.5s ease 0.4s",
+              }}
             />
-          </svg>
-        </div>
+            {/* Beam is rendered in ExploreMode using measured positions */}
+            {/* Spring coil */}
+            <svg
+              width={small ? 14 : 18}
+              height={springH}
+              viewBox="0 0 20 44"
+              preserveAspectRatio="none"
+              className="block"
+              style={{ transform: "perspective(200px) rotateX(25deg)" }}
+            >
+              <path
+                d="M10 0 Q24 5.5 10 11 Q-4 16.5 10 22 Q24 27.5 10 33 Q-4 38.5 10 44"
+                stroke="#d97706"
+                fill="none"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        )}
 
         {/* Box body (interior, visible when doors open) */}
         <div

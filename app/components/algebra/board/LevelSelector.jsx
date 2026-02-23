@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { levelEq } from "../parser";
 
 export function LevelSelector({
@@ -8,8 +9,14 @@ export function LevelSelector({
 }) {
   return (
     <div className="text-center mb-5">
+      <Link
+        href="/"
+        className="text-text-muted hover:text-text text-sm no-underline mb-3 inline-block"
+      >
+        &larr; Back to lessons
+      </Link>
       <h1 className="text-xl sm:text-2xl font-extrabold mb-1 text-accent">
-        Mekhi's Box Algebra Game
+        Equations
       </h1>
       <p className="text-xs text-text-muted mb-4">What&apos;s hiding in the box?</p>
 

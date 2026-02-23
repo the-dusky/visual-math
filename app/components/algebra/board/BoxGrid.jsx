@@ -6,6 +6,7 @@ export function BoxGrid({
   count, boxOpen, boxValue,
   sliceLines = 1, varName, greyedFrom, activeSlice,
   onClickVar, showPicker, onPickVar, onClosePicker,
+  mode, ineqDir, orbRef,
 }) {
   const small = count > 2;
 
@@ -27,6 +28,9 @@ export function BoxGrid({
             showPicker={showPicker && i === 0}
             onPickVar={onPickVar}
             onClosePicker={onClosePicker}
+            mode={mode}
+            ineqDir={ineqDir}
+            orbRef={i === 0 ? orbRef : undefined}
           />
         ))}
     </div>
