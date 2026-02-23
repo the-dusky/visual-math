@@ -17,6 +17,7 @@ export function useEquationState(level) {
   const [boxOpen, setBoxOpen] = useState(false);
   const [showCeleb, setShowCeleb] = useState(false);
   const [steps, setSteps] = useState([]);
+  const [negCoeff, setNegCoeff] = useState(!!level.negCoeff);
 
   const unfilled = holeCount - filledHoles;
 
@@ -32,12 +33,14 @@ export function useEquationState(level) {
   // Returns { boxCount, sliceLines, loosePills, holeCount, filledHoles } or null if invalid.
   function computeLeftOp(op, n, state) {
     let { boxCount: bC, sliceLines: sL, loosePills: lP, holeCount: hC, filledHoles: fH } = state;
+    let neg = !!state.negCoeff;
     const uf = hC - fH;
+    const absN = Math.abs(n);
 
     if (op === "÷") {
       if (n === 0) return { error: "Can't divide by zero!" };
     }
-    if (op === "×" && bC * n > 20) return { error: `${bC * n} boxes — too many!` };
+    if (op === "×" && bC * absN > 20) return { error: `${bC * absN} boxes — too many!` };
 
     if (op === "+") {
       const fillable = Math.min(n, uf);
@@ -48,28 +51,28 @@ export function useEquationState(level) {
       lP -= removable;
       hC += n - removable;
     } else if (op === "×") {
-      // Simplify: cancel filled holes before scaling
       hC = hC - fH;
       fH = 0;
-      let newNum = bC * n;
+      if (n < 0) neg = !neg;
+      let newNum = bC * absN;
       const g = gcd(newNum, sL);
       bC = newNum / g;
       sL = sL / g;
-      lP *= n;
-      hC *= n;
+      lP *= absN;
+      hC *= absN;
     } else if (op === "÷") {
-      // Simplify: cancel filled holes before scaling
       hC = hC - fH;
       fH = 0;
-      let newDen = sL * n;
+      if (n < 0) neg = !neg;
+      let newDen = sL * absN;
       const g = gcd(bC, newDen);
       bC = bC / g;
       sL = newDen / g;
-      lP = lP / n;
-      hC = hC / n;
+      lP = lP / absN;
+      hC = hC / absN;
     }
 
-    return { boxCount: bC, sliceLines: sL, loosePills: lP, holeCount: hC, filledHoles: fH };
+    return { boxCount: bC, sliceLines: sL, loosePills: lP, holeCount: hC, filledHoles: fH, negCoeff: neg };
   }
 
   // Apply computed state
@@ -79,12 +82,13 @@ export function useEquationState(level) {
     setLoosePills(newState.loosePills);
     setHoleCount(newState.holeCount);
     setFilledHoles(newState.filledHoles);
+    if (newState.negCoeff !== undefined) setNegCoeff(newState.negCoeff);
   }
 
   // Check if the current (or given) state is solved
   function isSolved(state) {
-    const s = state || { boxCount, sliceLines, loosePills, holeCount, filledHoles };
-    return s.boxCount === 1 && s.sliceLines === 1 && s.loosePills === 0 && (s.holeCount - s.filledHoles) === 0;
+    const s = state || { boxCount, sliceLines, loosePills, holeCount, filledHoles, negCoeff };
+    return s.boxCount === 1 && s.sliceLines === 1 && s.loosePills === 0 && (s.holeCount - s.filledHoles) === 0 && !s.negCoeff;
   }
 
   function fmt(n) {
@@ -92,11 +96,12 @@ export function useEquationState(level) {
   }
 
   function buildEquationString() {
+    const neg = negCoeff ? "−" : "";
     let varSide = "";
-    if (boxCount > 1 && sliceLines > 1) varSide = `${boxCount}${varName}/${sliceLines}`;
-    else if (sliceLines > 1) varSide = `${varName}/${sliceLines}`;
-    else if (boxCount > 1) varSide = `${boxCount}${varName}`;
-    else varSide = varName;
+    if (boxCount > 1 && sliceLines > 1) varSide = `${neg}${boxCount}${varName}/${sliceLines}`;
+    else if (sliceLines > 1) varSide = `${neg}${varName}/${sliceLines}`;
+    else if (boxCount > 1) varSide = `${neg}${boxCount}${varName}`;
+    else varSide = `${neg}${varName}`;
     if (loosePills > 0) varSide += ` + ${fmt(loosePills)}`;
     if (unfilled > 0) varSide += ` − ${fmt(unfilled)}`;
     const numSide = fmt(rPills);
@@ -107,11 +112,12 @@ export function useEquationState(level) {
   function buildInitialEquationString() {
     const initSlice = isMulType ? level.divisor : 1;
     const v = varName;
+    const neg = level.negCoeff ? "−" : "";
     let varSide = "";
-    if (level.initBoxes > 1 && initSlice > 1) varSide = `${level.initBoxes}${v}/${initSlice}`;
-    else if (initSlice > 1) varSide = `${v}/${initSlice}`;
-    else if (level.initBoxes > 1) varSide = `${level.initBoxes}${v}`;
-    else varSide = v;
+    if (level.initBoxes > 1 && initSlice > 1) varSide = `${neg}${level.initBoxes}${v}/${initSlice}`;
+    else if (initSlice > 1) varSide = `${neg}${v}/${initSlice}`;
+    else if (level.initBoxes > 1) varSide = `${neg}${level.initBoxes}${v}`;
+    else varSide = `${neg}${v}`;
     if (level.initPills > 0) varSide += ` + ${fmt(level.initPills)}`;
     if (level.initSlots > 0) varSide += ` − ${fmt(level.initSlots)}`;
     const numSide = fmt(level.rightPills);
@@ -131,6 +137,7 @@ export function useEquationState(level) {
     setHoleCount(level.initSlots);
     setFilledHoles(0);
     setRPills(level.rightPills);
+    setNegCoeff(!!level.negCoeff);
     setBoxOpen(false);
     setShowCeleb(false);
     setSteps([]);
@@ -144,6 +151,7 @@ export function useEquationState(level) {
     filledHoles, setFilledHoles,
     rPills, setRPills,
     varName, setVarName,
+    negCoeff, setNegCoeff,
     showPicker, togglePicker, closePicker,
     boxOpen, setBoxOpen,
     showCeleb,

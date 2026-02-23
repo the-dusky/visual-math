@@ -6,6 +6,8 @@ export const PRESET_LEVELS = [
   { type: "division", boxValue: 5, initBoxes: 3, initPills: 0, initSlots: 0, rightPills: 15, variable: "x" },
   { type: "multiply", boxValue: 12, initBoxes: 1, initPills: 0, initSlots: 0, rightPills: 3, divisor: 4, variable: "x" },
   { type: "twostep", boxValue: 4, initBoxes: 2, initPills: 3, initSlots: 0, rightPills: 11, variable: "x" },
+  // Negative coefficient
+  { type: "division", boxValue: -2, initBoxes: 5, initPills: 0, initSlots: 0, rightPills: 10, variable: "x", negCoeff: true },
   // Flipped (variable on right)
   { type: "addition", boxValue: 6, initBoxes: 1, initPills: 4, initSlots: 0, rightPills: 10, variable: "y", flipped: true },
   { type: "subtraction", boxValue: 9, initBoxes: 1, initPills: 0, initSlots: 2, rightPills: 7, variable: "n", flipped: true },

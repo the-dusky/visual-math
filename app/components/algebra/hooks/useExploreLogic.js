@@ -8,6 +8,7 @@ export function useExploreLogic(level) {
   const {
     boxCount, sliceLines, loosePills, holeCount, filledHoles,
     rPills, setRPills, varName, steps, setSteps, unfilled,
+    negCoeff, setNegCoeff,
     computeLeftOp, applyLeftState, isSolved, markSolved, resetToLevel,
   } = eq;
 
@@ -22,11 +23,26 @@ export function useExploreLogic(level) {
   const [opKey, setOpKey] = useState(0);
   const [workLines, setWorkLines] = useState([]);
 
+  function buildVarSide(result) {
+    const fmt = (v) => Number.isInteger(v) ? String(v) : parseFloat(v.toFixed(4)).toString();
+    const bC = result.boxCount, sL = result.sliceLines;
+    const lP = result.loosePills, uf = result.holeCount - result.filledHoles;
+    const neg = result.negCoeff ? "−" : "";
+    let vs = "";
+    if (bC > 1 && sL > 1) vs = `${neg}${bC}${varName}/${sL}`;
+    else if (sL > 1) vs = `${neg}${varName}/${sL}`;
+    else if (bC > 1) vs = `${neg}${bC}${varName}`;
+    else vs = `${neg}${varName}`;
+    if (lP > 0) vs += ` + ${fmt(lP)}`;
+    if (uf > 0) vs += ` − ${fmt(uf)}`;
+    return vs;
+  }
+
   function applyToLeft(op, n) {
-    setSnap({ boxCount, sliceLines, loosePills, holeCount, filledHoles, rPills });
+    setSnap({ boxCount, sliceLines, loosePills, holeCount, filledHoles, rPills, negCoeff });
     setLeftError("");
 
-    const result = computeLeftOp(op, n, { boxCount, sliceLines, loosePills, holeCount, filledHoles });
+    const result = computeLeftOp(op, n, { boxCount, sliceLines, loosePills, holeCount, filledHoles, negCoeff });
     if (result.error) {
       setLeftError(result.error);
       return;
@@ -36,17 +52,8 @@ export function useExploreLogic(level) {
     setLeftOp(op);
     setLeftNum(n);
 
-    // Build intermediate equation (left side changed, right side not yet)
     const fmt = (v) => Number.isInteger(v) ? String(v) : parseFloat(v.toFixed(4)).toString();
-    const bC = result.boxCount, sL = result.sliceLines;
-    const lP = result.loosePills, uf = result.holeCount - result.filledHoles;
-    let vs = "";
-    if (bC > 1 && sL > 1) vs = `${bC}${varName}/${sL}`;
-    else if (sL > 1) vs = `${varName}/${sL}`;
-    else if (bC > 1) vs = `${bC}${varName}`;
-    else vs = varName;
-    if (lP > 0) vs += ` + ${fmt(lP)}`;
-    if (uf > 0) vs += ` − ${fmt(uf)}`;
+    const vs = buildVarSide(result);
     const ns = fmt(rPills);
     const pendingEq = level.flipped ? `${ns} = ${vs}` : `${vs} = ${ns}`;
 
@@ -75,11 +82,13 @@ export function useExploreLogic(level) {
       const newLeft = computeLeftOp(leftOp, leftNum, {
         boxCount: snap.boxCount, sliceLines: snap.sliceLines,
         loosePills: snap.loosePills, holeCount: snap.holeCount, filledHoles: snap.filledHoles,
+        negCoeff: snap.negCoeff,
       });
 
       if (!newLeft.error && isSolved(newLeft)) {
         setPhase("solved");
-        const solvedText = level.flipped ? `${newR} = ${varName}` : `${varName} = ${newR}`;
+        const fmt = (v) => Number.isInteger(v) ? String(v) : parseFloat(v.toFixed(4)).toString();
+        const solvedText = level.flipped ? `${fmt(newR)} = ${varName}` : `${varName} = ${fmt(newR)}`;
         setWorkLines((w) => [
           ...w.slice(0, -2),
           { type: "op", op, n },
@@ -87,18 +96,8 @@ export function useExploreLogic(level) {
         ]);
         markSolved();
       } else {
-        // Build resulting equation string
         const fmt = (v) => Number.isInteger(v) ? String(v) : parseFloat(v.toFixed(4)).toString();
-        const bC = newLeft.boxCount, sL = newLeft.sliceLines;
-        const lP = newLeft.loosePills, uf = newLeft.holeCount - newLeft.filledHoles;
-        let varSide = "";
-        if (bC > 1 && sL > 1) varSide = `${bC}${varName}/${sL}`;
-        else if (sL > 1) varSide = `${varName}/${sL}`;
-        else if (bC > 1) varSide = `${bC}${varName}`;
-        else varSide = varName;
-        if (lP > 0) varSide += ` + ${fmt(lP)}`;
-        if (uf > 0) varSide += ` − ${fmt(uf)}`;
-
+        const varSide = buildVarSide(newLeft);
         const eqText = level.flipped ? `${fmt(newR)} = ${varSide}` : `${varSide} = ${fmt(newR)}`;
         setWorkLines((w) => [
           ...w.slice(0, -2),
@@ -128,6 +127,7 @@ export function useExploreLogic(level) {
       eq.setHoleCount(snap.holeCount);
       eq.setFilledHoles(snap.filledHoles);
       setRPills(snap.rPills);
+      setNegCoeff(snap.negCoeff);
     }
     setWorkLines((w) => {
       if (w.length >= 2 && w[w.length - 1].pending && w[w.length - 2].pending) return w.slice(0, -2);

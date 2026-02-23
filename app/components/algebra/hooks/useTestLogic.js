@@ -10,8 +10,8 @@ function parseOp(str) {
     .replace(/×/g, "*")
     .replace(/÷/g, "/");
 
-  // Match: optional op (+, -, *, /) followed by a number
-  const m = s.match(/^([+\-*/])?(\d+\.?\d*|\.\d+)$/);
+  // Match: op (+, -, *, /) followed by a possibly-negative number
+  const m = s.match(/^([+\-*/])(-?\d+\.?\d*|-?\.\d+)$/);
   if (!m) return null;
 
   const rawOp = m[1] || "+";
@@ -27,6 +27,7 @@ export function useTestLogic(level) {
   const {
     boxCount, sliceLines, loosePills, holeCount, filledHoles,
     rPills, setRPills, varName, unfilled,
+    negCoeff,
     computeLeftOp, applyLeftState, isSolved, markSolved, resetToLevel,
   } = eq;
 
@@ -50,7 +51,7 @@ export function useTestLogic(level) {
     if (!right) { setError("Right side: try something like −3, +5, ×2, ÷4"); return; }
 
     // Apply left operation
-    const result = computeLeftOp(left.op, left.n, { boxCount, sliceLines, loosePills, holeCount, filledHoles });
+    const result = computeLeftOp(left.op, left.n, { boxCount, sliceLines, loosePills, holeCount, filledHoles, negCoeff });
     if (result.error) { setError(result.error); return; }
 
     // Apply right operation
@@ -75,11 +76,12 @@ export function useTestLogic(level) {
     // Build equation string from new state
     const bC = result.boxCount, sL = result.sliceLines;
     const lP = result.loosePills, uf = result.holeCount - result.filledHoles;
+    const neg = result.negCoeff ? "−" : "";
     let varSide = "";
-    if (bC > 1 && sL > 1) varSide = `${bC}${varName}/${sL}`;
-    else if (sL > 1) varSide = `${varName}/${sL}`;
-    else if (bC > 1) varSide = `${bC}${varName}`;
-    else varSide = varName;
+    if (bC > 1 && sL > 1) varSide = `${neg}${bC}${varName}/${sL}`;
+    else if (sL > 1) varSide = `${neg}${varName}/${sL}`;
+    else if (bC > 1) varSide = `${neg}${bC}${varName}`;
+    else varSide = `${neg}${varName}`;
     if (lP > 0) varSide += ` + ${fmt(lP)}`;
     if (uf > 0) varSide += ` − ${fmt(uf)}`;
 
