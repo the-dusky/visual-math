@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useInequalityState } from "./useInequalityState";
+import { INEQ_DISPLAY } from "../parser";
+
+const FLIP_MAP = { ">": "<", "<": ">", ">=": "<=", "<=": ">=" };
 
 function parseOp(str) {
   const s = str.trim()
@@ -38,8 +41,25 @@ export function useInequalityTest(level) {
   const [error, setError] = useState("");
   const [workLines, setWorkLines] = useState([]);
   const [solved, setSolved] = useState(false);
+  const [phase, setPhase] = useState("input"); // "input" | "choose_symbol" | "solved"
+  const [pendingResolve, setPendingResolve] = useState(null);
+  const [symbolError, setSymbolError] = useState("");
 
   const fmt = (v) => Number.isInteger(v) ? String(v) : parseFloat(v.toFixed(4)).toString();
+
+  function buildVarSide(result) {
+    const bC = result.boxCount, sL = result.sliceLines;
+    const lP = result.loosePills, uf = result.holeCount - result.filledHoles;
+    const neg = result.negCoeff ? "−" : "";
+    let vs = "";
+    if (bC > 1 && sL > 1) vs = `${neg}${bC}${varName}/${sL}`;
+    else if (sL > 1) vs = `${neg}${varName}/${sL}`;
+    else if (bC > 1) vs = `${neg}${bC}${varName}`;
+    else vs = `${neg}${varName}`;
+    if (lP > 0) vs += ` + ${fmt(lP)}`;
+    if (uf > 0) vs += ` − ${fmt(uf)}`;
+    return vs;
+  }
 
   function tryIt() {
     setError("");
@@ -69,33 +89,12 @@ export function useInequalityTest(level) {
     // Check if balanced
     const balanced = left.op === right.op && left.n === right.n;
 
-    // Flip inequality if multiply/divide by negative
-    if ((left.op === "×" || left.op === "÷") && left.n < 0) {
-      flipInequality();
-    }
+    // Don't flip yet — student will choose the symbol
+    const shouldFlip = (left.op === "×" || left.op === "÷") && left.n < 0;
 
     // Commit state
     applyLeftState(result);
     setRPills(newR);
-
-    // Build equation string from new state
-    const bC = result.boxCount, sL = result.sliceLines;
-    const lP = result.loosePills, uf = result.holeCount - result.filledHoles;
-    const neg = result.negCoeff ? "−" : "";
-    let varSide = "";
-    if (bC > 1 && sL > 1) varSide = `${neg}${bC}${varName}/${sL}`;
-    else if (sL > 1) varSide = `${neg}${varName}/${sL}`;
-    else if (bC > 1) varSide = `${neg}${bC}${varName}`;
-    else varSide = `${neg}${varName}`;
-    if (lP > 0) varSide += ` + ${fmt(lP)}`;
-    if (uf > 0) varSide += ` − ${fmt(uf)}`;
-
-    const sym = eq.ineqSym;
-    const nowSolved = isSolved(result);
-
-    const eqText = level.flipped
-      ? `${fmt(newR)} ${sym} ${varSide}`
-      : `${varSide} ${sym} ${fmt(newR)}`;
 
     const opLine = {
       type: "op",
@@ -103,23 +102,68 @@ export function useInequalityTest(level) {
       right: { op: right.op, n: right.n },
       balanced,
     };
-    const eqLine = {
-      type: "eq",
-      text: nowSolved
-        ? (level.flipped ? `${fmt(newR)} ${sym} ${varName}` : `${varName} ${sym} ${fmt(newR)}`)
-        : eqText,
-      solved: nowSolved,
-      unbalanced: !balanced,
-    };
 
-    setWorkLines((w) => [...w, opLine, eqLine]);
+    // Add op line with pending equation (before symbol choice)
+    const vs = buildVarSide(result);
+    const sym = ineqSym;
+    const pendingEq = level.flipped ? `${fmt(newR)} ${sym} ${vs}` : `${vs} ${sym} ${fmt(newR)}`;
+
+    setWorkLines((w) => [...w, opLine, { type: "eq", text: pendingEq, pending: true, unbalanced: !balanced }]);
     setLeftInput("");
     setRightInput("");
 
+    // Enter symbol choice phase
+    setPendingResolve({ result, newR, shouldFlip, balanced });
+    setSymbolError("");
+    setPhase("choose_symbol");
+  }
+
+  function chooseSymbol(didFlip) {
+    if (!pendingResolve) return;
+    const { result, newR, shouldFlip, balanced } = pendingResolve;
+
+    if (didFlip !== shouldFlip) {
+      if (shouldFlip) {
+        setSymbolError("When you multiply or divide by a negative, the inequality flips!");
+      } else {
+        setSymbolError("The inequality only flips when you multiply or divide by a negative number.");
+      }
+      return;
+    }
+
+    // Correct choice — apply the flip if needed
+    if (shouldFlip) {
+      flipInequality();
+    }
+
+    const newDir = shouldFlip ? FLIP_MAP[ineqDir] : ineqDir;
+    const sym = INEQ_DISPLAY[newDir] || newDir;
+    const fromSym = INEQ_DISPLAY[ineqDir] || ineqDir;
+    const symbolLine = { type: "symbol", from: fromSym, to: sym, flipped: shouldFlip };
+
+    const vs = buildVarSide(result);
+    const nowSolved = isSolved(result);
+
+    const eqText = nowSolved
+      ? (level.flipped ? `${fmt(newR)} ${sym} ${varName}` : `${varName} ${sym} ${fmt(newR)}`)
+      : (level.flipped ? `${fmt(newR)} ${sym} ${vs}` : `${vs} ${sym} ${fmt(newR)}`);
+
+    setWorkLines((w) => [
+      ...w.slice(0, -1),  // Remove pending eq line
+      symbolLine,
+      { type: "eq", text: eqText, solved: nowSolved, unbalanced: !balanced },
+    ]);
+
     if (nowSolved) {
       setSolved(true);
+      setPhase("solved");
       markSolved();
+    } else {
+      setPhase("input");
     }
+
+    setPendingResolve(null);
+    setSymbolError("");
   }
 
   function reset() {
@@ -129,6 +173,9 @@ export function useInequalityTest(level) {
     setError("");
     setWorkLines([]);
     setSolved(false);
+    setPhase("input");
+    setPendingResolve(null);
+    setSymbolError("");
   }
 
   return {
@@ -138,8 +185,9 @@ export function useInequalityTest(level) {
     leftInput, setLeftInput,
     rightInput, setRightInput,
     error, workLines, solved,
+    phase, symbolError, pendingResolve,
     showCeleb: eq.showCeleb,
-    tryIt, reset,
+    tryIt, chooseSymbol, reset,
     boxValue: level.boxValue,
     inequality: level.inequality,
     flipped: level.flipped,

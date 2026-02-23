@@ -6,6 +6,9 @@ import { NumberLine } from "../ui/NumberLine";
 import { EquationDisplay } from "../../algebra/ui/Frac";
 import { Celeb } from "../../algebra/ui/Celeb";
 import { ActionBar } from "../../algebra/board/ActionBar";
+import { INEQ_DISPLAY } from "../parser";
+
+const FLIP_MAP = { ">": "<", "<": ">", ">=": "<=", "<=": ">=" };
 
 function OpNotation({ op, n }) {
   if (op === "÷") {
@@ -60,20 +63,32 @@ export function TestMode({ level, onNext, hasNext }) {
                 <span className="pb-0.5">{s.ineqSym}</span>
                 <OpNotation op={line.right.op} n={line.right.n} />
               </div>
+            ) : line.type === "symbol" ? (
+              <div key={i} className="flex items-center justify-center gap-2 text-[13px] font-bold">
+                {line.flipped ? (
+                  <span className="text-accent">
+                    {line.from} &rarr; {line.to} (flipped!)
+                  </span>
+                ) : (
+                  <span className="text-text-secondary">
+                    {line.from} stays {line.to}
+                  </span>
+                )}
+              </div>
             ) : (
               <EquationDisplay
                 key={i}
                 text={line.text}
                 size={line.solved ? 22 : 18}
                 equalsOverride={line.unbalanced ? "\u2260" : undefined}
-                colorClass={line.solved ? "text-ok" : line.unbalanced ? "text-err" : undefined}
+                colorClass={line.solved ? "text-ok" : line.unbalanced ? "text-err" : line.pending ? "text-text-faint" : undefined}
               />
             )
           )}
         </div>
 
         {/* Input area */}
-        {!s.solved && (
+        {s.phase === "input" && (
           <div className="flex flex-col items-center gap-3 p-4 rounded-xl bg-surface-raised border border-border mb-4">
             <div className="flex items-center gap-2">
               <input
@@ -103,6 +118,32 @@ export function TestMode({ level, onNext, hasNext }) {
             </button>
             {s.error && (
               <span className="text-[11px] text-err-text text-center">{s.error}</span>
+            )}
+          </div>
+        )}
+
+        {/* Choose inequality symbol */}
+        {s.phase === "choose_symbol" && (
+          <div className="flex flex-col items-center gap-3 p-4 rounded-xl bg-surface-raised border border-border mb-4">
+            <span className="text-[13px] text-text-secondary font-bold text-center">
+              What happens to the inequality symbol?
+            </span>
+            <div className="flex gap-3">
+              <button
+                onClick={() => s.chooseSymbol(false)}
+                className="py-2.5 px-6 rounded-lg border-2 border-border bg-surface text-text-secondary font-extrabold cursor-pointer text-lg hover:border-accent hover:text-accent transition-colors"
+              >
+                Keep {s.ineqSym}
+              </button>
+              <button
+                onClick={() => s.chooseSymbol(true)}
+                className="py-2.5 px-6 rounded-lg border-2 border-border bg-surface text-text-secondary font-extrabold cursor-pointer text-lg hover:border-accent hover:text-accent transition-colors"
+              >
+                Flip to {INEQ_DISPLAY[FLIP_MAP[s.ineqDir]] || FLIP_MAP[s.ineqDir]}
+              </button>
+            </div>
+            {s.symbolError && (
+              <span className="text-[12px] text-err-text font-bold text-center">{s.symbolError}</span>
             )}
           </div>
         )}
