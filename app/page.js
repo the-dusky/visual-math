@@ -15,6 +15,13 @@ const lessons = [
     icon: "📐",
     ready: true,
   },
+  {
+    title: "Distribution",
+    desc: "Distribute, then solve",
+    href: "/distribution",
+    icon: "🎯",
+    ready: true,
+  },
 ];
 
 export default function Home() {

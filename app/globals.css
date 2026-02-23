@@ -63,6 +63,21 @@ body {
   }
 }
 
+@keyframes arcDraw {
+  from {
+    stroke-dashoffset: 200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-arc-draw {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: arcDraw 0.4s ease-out forwards;
+}
+
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
   -webkit-appearance: none;
