@@ -293,25 +293,28 @@ export function DistributeView({
           overflow: "hidden",
         }}
       >
-        <div className="flex flex-col items-center gap-3">
-          {/* All boxes */}
-          <div className={`flex gap-1 flex-wrap justify-center p-2 rounded-lg transition-all duration-300
-            ${arcBoxDone ? "border border-dashed border-ok bg-ok/5" : ""}`}>
-            {Array(multiplier * innerBoxes).fill(0).map((_, bi) => (
-              <MysteryBox
-                key={bi}
-                open={false}
-                value={boxValue}
-                small={true}
-                variable={v}
-              />
-            ))}
-          </div>
-          {/* All pills */}
-          <div className={`p-2 rounded-lg transition-all duration-300
-            ${arcPillDone ? "border border-dashed border-ok bg-ok/5" : ""}`}>
-            <PillGroup count={multiplier * pillCount} holes={multiplier * holeCount} />
-          </div>
+        <div className={`flex gap-2 flex-wrap justify-center p-2 rounded-xl transition-all duration-300
+          ${allArcsDone ? "border border-dashed border-ok bg-ok/5" : ""}`}>
+          {Array(multiplier).fill(0).map((_, gi) => (
+            <div
+              key={gi}
+              className="flex flex-col items-center gap-1.5 p-2 rounded-lg border border-border bg-surface-overlay/40"
+              style={{ minWidth: 60 }}
+            >
+              <div className="flex gap-1 flex-wrap justify-center">
+                {Array(innerBoxes).fill(0).map((_, bi) => (
+                  <MysteryBox
+                    key={bi}
+                    open={false}
+                    value={boxValue}
+                    small={true}
+                    variable={v}
+                  />
+                ))}
+              </div>
+              <PillGroup count={pillCount} holes={holeCount} />
+            </div>
+          ))}
         </div>
       </div>
 

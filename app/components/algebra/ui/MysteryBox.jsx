@@ -24,7 +24,7 @@ export function MysteryBox({
   open, value, small,
   sliceLines: lines = 1, variable, onClickVar, showPicker,
   onPickVar, onClosePicker, greyed, activeSlice,
-  mode = "equation", ineqDir, orbRef, negCoeff,
+  mode = "equation", ineqDir, orbRef, negCoeff, varColorClass,
 }) {
   const sz = small ? 56 : 86;
   const v = variable || "x";
@@ -221,7 +221,7 @@ export function MysteryBox({
             <span
               className={`font-extrabold font-mono select-none
                 ${small ? "text-[26px]" : "text-[40px]"}
-                ${greyed ? "text-text-faint" : negCoeff ? "text-err-text" : "text-accent-bright"}
+                ${greyed ? "text-text-faint" : negCoeff ? "text-err-text" : varColorClass || "text-accent-bright"}
               `}
             >
               {negCoeff ? `−${v}` : v}
