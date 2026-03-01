@@ -22,6 +22,20 @@ const lessons = [
     icon: "🎯",
     ready: true,
   },
+  {
+    title: "Advanced Distribution",
+    desc: "Multi-variable distribution",
+    href: "/advanced-distribution",
+    icon: "🧮",
+    ready: true,
+  },
+  {
+    title: "Circle Geometry",
+    desc: "Radius, diameter, chord, secant & tangent",
+    href: "/circle-geometry",
+    icon: "\u{1F7E0}",
+    ready: true,
+  },
 ];
 
 export default function Home() {
@@ -67,6 +81,26 @@ export default function Home() {
               </div>
             )
           )}
+        </div>
+
+        <div className="mt-8 pt-6 border-t border-border">
+          <p className="text-text-faint text-xs mb-3 text-center">Tools</p>
+          <div className="grid gap-4">
+            <Link
+              href="/my-story"
+              className="group flex items-center gap-4 p-5 rounded-xl bg-surface-raised border border-border hover:border-accent-dim transition-colors no-underline"
+            >
+              <span className="text-3xl">📓</span>
+              <div>
+                <h2 className="text-lg font-bold text-text group-hover:text-accent transition-colors">
+                  My Story
+                </h2>
+                <p className="text-sm text-text-muted m-0">
+                  Daily one-sentence journal for each class
+                </p>
+              </div>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
