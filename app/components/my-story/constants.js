@@ -36,3 +36,4 @@ export const CLASS_COLORS = [
 ];
 
 export const MAX_SENTENCE_LENGTH = 140;
+export const MAX_PHOTOS = 3;

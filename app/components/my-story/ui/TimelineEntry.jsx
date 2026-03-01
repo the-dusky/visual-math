@@ -14,6 +14,20 @@ export function TimelineEntry({ entry, cls, showClassName }) {
           <p className="text-[11px] text-text-faint font-semibold mb-0.5">{cls?.name}</p>
         )}
         <p className="text-sm text-text-secondary">{entry.sentence}</p>
+
+        {/* Photo thumbnails */}
+        {entry.photos?.length > 0 && (
+          <div className="flex gap-1.5 mt-1.5">
+            {entry.photos.map((url, i) => (
+              <img
+                key={url}
+                src={url}
+                alt={`Photo ${i + 1}`}
+                className="w-12 h-12 rounded object-cover border border-border"
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

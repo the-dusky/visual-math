@@ -1,8 +1,9 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { MAX_SENTENCE_LENGTH } from "../constants";
+import { PhotoUploader } from "./PhotoUploader";
 
-export function ClassCard({ cls, entry, onSave }) {
+export function ClassCard({ cls, entry, onSave, onUpdatePhotos }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(entry?.sentence || "");
   const [saved, setSaved] = useState(false);
@@ -80,6 +81,14 @@ export function ClassCard({ cls, entry, onSave }) {
             >
               {entry.sentence}
             </button>
+          )}
+
+          {/* Photos */}
+          {onUpdatePhotos && (
+            <PhotoUploader
+              photos={entry?.photos || []}
+              onUpdate={(photos) => onUpdatePhotos(cls.id, photos)}
+            />
           )}
         </div>
       </div>

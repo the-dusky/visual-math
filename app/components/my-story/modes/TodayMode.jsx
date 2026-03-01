@@ -5,7 +5,7 @@ import { todayKey, formatDate } from "../constants";
 
 export function TodayMode({ classes, entries }) {
   const { activeClasses } = classes;
-  const { entries: allEntries, upsertEntry, getEntryForToday } = entries;
+  const { entries: allEntries, upsertEntry, getEntryForToday, updateEntryPhotos } = entries;
   const today = todayKey();
 
   const classesWithStatus = useMemo(() => {
@@ -57,6 +57,7 @@ export function TodayMode({ classes, entries }) {
           cls={cls}
           entry={entry}
           onSave={upsertEntry}
+          onUpdatePhotos={updateEntryPhotos}
         />
       ))}
 
