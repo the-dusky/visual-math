@@ -29,11 +29,8 @@ export default function CircleGeometryGame() {
           </p>
         </div>
 
-        {/* SVG Diagram */}
-        <CircleDiagram selected={selected} onSelect={setSelected} />
-
         {/* Concept selector pills */}
-        <div className="flex gap-1.5 justify-center flex-wrap mt-4 mb-5 px-2">
+        <div className="flex gap-1.5 justify-center flex-wrap mb-4 px-2">
           {CONCEPTS.map((c) => {
             const isSel = selected === c.id;
             return (
@@ -63,7 +60,7 @@ export default function CircleGeometryGame() {
 
         {/* Info card */}
         <div
-          className="overflow-hidden transition-all duration-300 ease-out"
+          className="overflow-hidden transition-all duration-300 ease-out mb-4"
           style={{
             maxHeight: concept ? 600 : 0,
             opacity: concept ? 1 : 0,
@@ -119,6 +116,9 @@ export default function CircleGeometryGame() {
             </div>
           )}
         </div>
+
+        {/* SVG Diagram */}
+        <CircleDiagram selected={selected} onSelect={setSelected} />
       </div>
     </div>
   );
