@@ -1,12 +1,14 @@
 "use client";
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { ClassCard } from "../ui/ClassCard";
+import { EntryDetail } from "../ui/EntryDetail";
 import { todayKey, formatDate } from "../constants";
 
 export function TodayMode({ classes, entries }) {
   const { activeClasses } = classes;
   const { entries: allEntries, upsertEntry, getEntryForToday, updateEntryPhotos } = entries;
   const today = todayKey();
+  const [detailClassId, setDetailClassId] = useState(null);
 
   const classesWithStatus = useMemo(() => {
     return activeClasses.map((cls) => ({
@@ -58,6 +60,7 @@ export function TodayMode({ classes, entries }) {
           entry={entry}
           onSave={upsertEntry}
           onUpdatePhotos={updateEntryPhotos}
+          onOpenDetail={setDetailClassId}
         />
       ))}
 
@@ -69,6 +72,21 @@ export function TodayMode({ classes, entries }) {
           </p>
         </div>
       )}
+
+      {/* Entry detail modal */}
+      {detailClassId && (() => {
+        const cls = activeClasses.find((c) => c.id === detailClassId);
+        const entry = allEntries.find((e) => e.classId === detailClassId && e.date === today);
+        return cls ? (
+          <EntryDetail
+            entry={entry}
+            cls={cls}
+            onSave={upsertEntry}
+            onUpdatePhotos={updateEntryPhotos}
+            onClose={() => setDetailClassId(null)}
+          />
+        ) : null;
+      })()}
     </div>
   );
 }

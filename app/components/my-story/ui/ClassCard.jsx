@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { MAX_SENTENCE_LENGTH } from "../constants";
 import { PhotoUploader } from "./PhotoUploader";
 
-export function ClassCard({ cls, entry, onSave, onUpdatePhotos }) {
+export function ClassCard({ cls, entry, onSave, onUpdatePhotos, onOpenDetail }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(entry?.sentence || "");
   const [saved, setSaved] = useState(false);
@@ -76,7 +76,7 @@ export function ClassCard({ cls, entry, onSave, onUpdatePhotos }) {
             </div>
           ) : (
             <button
-              onClick={() => setEditing(true)}
+              onClick={() => onOpenDetail ? onOpenDetail(cls.id) : setEditing(true)}
               className="text-sm text-text-secondary bg-transparent border-none cursor-pointer text-left p-0 hover:text-text transition-colors w-full"
             >
               {entry.sentence}

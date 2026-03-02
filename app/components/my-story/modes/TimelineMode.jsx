@@ -2,12 +2,14 @@
 import { useState, useMemo } from "react";
 import { ClassPill } from "../ui/ClassPill";
 import { TimelineEntry } from "../ui/TimelineEntry";
+import { EntryDetail } from "../ui/EntryDetail";
 import { formatDate } from "../constants";
 
 export function TimelineMode({ classes, entries }) {
   const { activeClasses } = classes;
-  const { entries: allEntries } = entries;
+  const { entries: allEntries, upsertEntry, updateEntryPhotos } = entries;
   const [selectedClassId, setSelectedClassId] = useState(null);
+  const [detailEntry, setDetailEntry] = useState(null);
 
   const classMap = useMemo(() => {
     const map = {};
@@ -84,6 +86,7 @@ export function TimelineMode({ classes, entries }) {
                     entry={entry}
                     cls={classMap[entry.classId]}
                     showClassName={showClassName}
+                    onOpenDetail={setDetailEntry}
                   />
                 ))}
               </div>
@@ -98,6 +101,17 @@ export function TimelineMode({ classes, entries }) {
               : "No entries yet. Start writing in Today!"}
           </p>
         </div>
+      )}
+
+      {/* Entry detail modal */}
+      {detailEntry && (
+        <EntryDetail
+          entry={detailEntry}
+          cls={classMap[detailEntry.classId]}
+          onSave={upsertEntry}
+          onUpdatePhotos={updateEntryPhotos}
+          onClose={() => setDetailEntry(null)}
+        />
       )}
     </div>
   );

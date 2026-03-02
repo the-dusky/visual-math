@@ -6,8 +6,8 @@ import { STORAGE_KEYS, todayKey } from "../constants";
 export function useEntries() {
   const [entries, setEntries] = useLocalStorage(STORAGE_KEYS.ENTRIES, []);
 
-  const upsertEntry = useCallback((classId, sentence) => {
-    const date = todayKey();
+  const upsertEntry = useCallback((classId, sentence, dateOverride) => {
+    const date = dateOverride || todayKey();
     setEntries((prev) => {
       const idx = prev.findIndex((e) => e.classId === classId && e.date === date);
       if (idx >= 0) {

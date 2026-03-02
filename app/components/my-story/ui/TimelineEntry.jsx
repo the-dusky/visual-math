@@ -1,8 +1,11 @@
 "use client";
 
-export function TimelineEntry({ entry, cls, showClassName }) {
+export function TimelineEntry({ entry, cls, showClassName, onOpenDetail }) {
   return (
-    <div className="flex items-start gap-3 py-2">
+    <div
+      className="flex items-start gap-3 py-2 cursor-pointer hover:bg-surface-raised/50 -mx-2 px-2 rounded-lg transition-colors"
+      onClick={() => onOpenDetail?.(entry)}
+    >
       {/* Color dot */}
       <span
         className="block w-3 h-3 rounded-full flex-shrink-0 mt-1"
